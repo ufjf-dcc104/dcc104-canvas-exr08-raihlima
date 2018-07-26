@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Jogo 08</title>
+  <script src="Personagem.js"></script>
+  <script src="Mapa.js"></script>
+  <script src="Bomba.js"></script>
+</head>
+<body>
+  <h1>Jogo 08</h1>
+  <canvas id="canvas" width="760" height="550"></canvas>
+  <script>
+  //Audio
+  var somIni = new Audio();
+  somIni.src = "Som/Inicio.m4a";
+
+  var somFim = new Audio();
+  somFim.src = "Som/Fim.m4a";
+
+  var somExplosao = new Audio();
+  somExplosao.src = "Som/Explosao.m4a";
+
+  var somAcender = new Audio();
+  somAcender.src = "Som/Acender.m4a";
+
+  var somItem = new Audio();
+  somItem.src = "Som/Item.m4a";
+
+  var somBloco = new Audio();
+  somBloco.src = "Som/Bloco.m4a";
+
+  //Tela
+  var canvas = document.getElementsByTagName("canvas")[0];
+  var ctx = canvas.getContext("2d");
+
+  var bg = new Image();
+  bg.src = "bg.png";
+
+  var dt = anterior = 0;
+
+  var mapa = new Mapa (13,19);
+
+  var personagem = new Personagem(1,mapa);
+
+  var personagem2 = new Personagem(2,mapa);
+
+  var bomba1 = [];
+  var bomba2 = [];
+
+
+  var cenario = 0;
+
+  function atualizar (t){
+    if(cenario == 0){
+      somIni.play();
+      ctx.fillStyle = "white";
+      ctx.fillRect(0,0, canvas.width, canvas.height);
+      ctx.drawImage(bg,0,0);
+      ctx.font = '70pt Arial';
+      ctx.fillStyle = "wheat";
+      ctx.textAlign = "center";
+      ctx.fillText("Bombardeador", 350, 150);
+      ctx.font = '20pt Arial';
+      ctx.fillText("Pressione qualquer tecla para continuar", 350, 470);
+
+      requestAnimationFrame(atualizar);
+    } else if (cenario ==2){
+      somIni.play();
+
+      ctx.fillStyle = "white";
+      ctx.fillRect(0,0, canvas.width, canvas.height);
+
+      dt = (t - anterior)/1000;
+      mapa.desenhar(ctx);
+
+      //Desenha as bombas
+
+      for(var i=0;i< bomba1.length;i++){
+        bomba1[i].desenhar(ctx);
+        bomba1[i].explode(ctx,mapa);
+        if(bomba1[i].color=="yellow"){
+          mapa.cells[bomba1[i].gy][bomba1[i].gx]=1;
+          bomba1.splice(i,1);
+          break;
+        }
+        //ctx.fillText(bomba1.length, 350, 470);
+      }
+
+      for(var i=0;i< bomba2.length;i++){
+        bomba2[i].desenhar(ctx);
+        bomba2[i].explode(ctx,mapa);
+        if(bomba2[i].color=="yellow"){
+          mapa.cells[bomba2[i].gy][bomba2[i].gx]=1;
+          bomba2.splice(i,1);
+          break;
+        }
+        //ctx.fillText(bomba2.length, 350, 470);
+      }
+
+      //Confere Adição de Especiais
+      //Jogador 1
+      if(mapa.verificaBombaExtra(personagem.gy,personagem.gx)==true){
+        personagem.limiteBomba+=1;
+        mapa.cells[personagem.gy][personagem.gx] = 1;
+        somItem.load();
+        somItem.play();
+      }
+      if(mapa.verificaTamanhoBomba(personagem.gy,personagem.gx)==true){
+        personagem.tamanhoBomba+=1;
+        mapa.cells[personagem.gy][personagem.gx] = 1;
+        somItem.load();
+        somItem.play();
+      }
+      if(mapa.verificaVelocidadeDetonacao(personagem.gy,personagem.gx)==true){
+        personagem.velocidadeDetonacao+=1;
+        mapa.cells[personagem.gy][personagem.gx] = 1;
+        somItem.load();
+        somItem.play();
+      }
+
+      //Jogador 2
+      if(mapa.verificaBombaExtra(personagem2.gy,personagem2.gx)==true){
+        personagem2.limiteBomba+=1;
+        mapa.cells[personagem2.gy][personagem2.gx] = 1;
+        somItem.load();
+        somItem.play();
+      }
+      if(mapa.verificaTamanhoBomba(personagem2.gy,personagem2.gx)==true){
+        personagem2.tamanhoBomba+=1;
+        mapa.cells[personagem2.gy][personagem2.gx] = 1;
+        somItem.load();
+        somItem.play();
+      }
+      if(mapa.verificaVelocidadeDetonacao(personagem2.gy,personagem2.gx)==true){
+        personagem2.velocidadeDetonacao+=1;
+        mapa.cells[personagem2.gy][personagem2.gx] = 1;
+        somItem.load();
+        somItem.play();
+      }
+
+      //verifica morte com a bomba
+      //bomba1
+      for(var i=0;i<bomba1.length;i++){
+        for(var j=0;j<bomba1[i].fragmentos.length;j++){
+          if(bomba1[i].fragmentos[j].gx == personagem.gx && bomba1[i].fragmentos[j].gy == personagem.gy){
+            personagem.vida-=1;
+          } if(bomba1[i].fragmentos[j].gx == personagem2.gx && bomba1[i].fragmentos[j].gy == personagem2.gy){
+            personagem2.vida-=1;
+          }
+        }
+      }
+      //Bomba 2
+      for(var i=0;i<bomba2.length;i++){
+        for(var j=0;j<bomba2[i].fragmentos.length;j++){
+          if(bomba2[i].fragmentos[j].gx == personagem.gx && bomba2[i].fragmentos[j].gy == personagem.gy){
+            personagem.vida-=1;
+          } if(bomba2[i].fragmentos[j].gx == personagem2.gx && bomba2[i].fragmentos[j].gy == personagem2.gy){
+            personagem2.vida-=1;
+          }
+        }
+      }
+      personagem.desenhar(ctx);
+      personagem.mover(mapa,dt);
+
+      personagem2.desenhar(ctx);
+      personagem2.mover(mapa,dt);
+
+      //condição de game over
+      if(personagem.vida<1 || personagem2.vida<1){
+        cenario =3;
+        somFim.play();
+      }
+
+
+
+      anterior = t;
+      requestAnimationFrame(atualizar);
+    } else if(cenario == 3){
+      somFim.pause();
+
+      //Tela final
+      ctx.textAlign = "center";
+      ctx.fillStyle = "black";
+      ctx.fillRect(0,0, canvas.width, canvas.height);
+        ctx.drawImage(bg,0,0);
+      ctx.strokeStyle="black";
+      ctx.fillStyle = 'white';
+      ctx.font = '40pt Arial';
+      ctx.strokeText("Vencedor", 350,100);
+      ctx.fillText("Vencedor", 350, 100);
+
+
+      //verifica quem tem mais vida
+      if(personagem.vida<personagem2.vida){
+        ctx.strokeStyle="black";
+        ctx.fillStyle = 'white';
+        ctx.strokeText("Jogador 2", 350,250);
+        ctx.fillText("Jogador 2", 350, 250);
+      } else if(personagem.vida>personagem2.vida){
+        ctx.strokeStyle="black";
+        ctx.fillStyle = 'white';
+        ctx.strokeText("Jogador 1", 350,250);
+        ctx.fillText("Jogador 1", 350, 250);
+
+      } else {
+        ctx.strokeStyle="black";
+        ctx.fillStyle = 'white';
+        ctx.strokeText("Ninguém", 350,250);
+        ctx.fillText("Ninguém", 350, 250);
+      }
+    }
+
+  }
+
+  addEventListener("keydown", function (e) {
+    switch (e.keyCode) {
+      case 13://Enter
+      if(cenario==2){
+        if(bomba1.length<personagem.limiteBomba){
+          somAcender.load();
+          somAcender.play();
+          bomba1.push(new Bomba(personagem.gx, personagem.gy, mapa, personagem.tamanhoBomba, personagem.velocidadeDetonacao));
+          break;
+        }
+
+      }
+      break;
+
+      case 32://Espaço
+      if(cenario==2){
+        if(bomba2.length<personagem2.limiteBomba){
+          somAcender.load();
+          somAcender.play();
+          bomba2.push(new Bomba(personagem2.gx, personagem2.gy, mapa, personagem2.tamanhoBomba, personagem2.velocidadeDetonacao));
+
+      }
+        //mapa.cells[personagem2.gy][personagem2.gx]=6;
+      }
+      break;
+      case 37: //Botão Esquerdo
+      if(mapa.verificaChao(personagem.gy,personagem.gx-1)==true){
+        personagem.vx-=1;
+        break;
+      }
+      break;
+      case 39: //Botão Direito
+      if(mapa.verificaChao(personagem.gy,personagem.gx+1)==true){
+        personagem.vx+=1;
+        break;
+      }
+      break;
+      case 38: //Botão Cima
+      if(mapa.verificaChao(personagem.gy-1,personagem.gx)==true){
+        personagem.vy-=1;
+        break;
+      }
+      break;
+      case 40: //Botão Baixo
+      if(mapa.verificaChao(personagem.gy+1,personagem.gx)==true){
+        personagem.vy+=1;
+        break;
+      }
+      break;
+
+
+      //Jogador 2
+      case 65: // Botao A //Esquerda
+      if(mapa.verificaChao(personagem2.gy,personagem2.gx-1)==true){
+        personagem2.vx-=1;
+        break;
+      }
+      break;
+
+      case 83: //Botao S //Baixo
+      if(mapa.verificaChao(personagem2.gy+1,personagem2.gx)==true){
+        personagem2.vy+=1;
+        break;
+      }
+      break;
+      case 68: // Botao D // Direita
+      if(mapa.verificaChao(personagem2.gy,personagem2.gx+1)==true){
+        personagem2.vx+=1;
+        break;
+      }
+      break;
+
+      case 87: // Botao W// Cima
+      if(mapa.verificaChao(personagem2.gy-1,personagem2.gx)==true){
+        personagem2.vy-=1;
+        break;
+      }
+      break;
+
+      default:
+      if(cenario==0){
+        cenario=2;
+        break;
+      }
+
+    }});
+    addEventListener("keyup", function (e) {
+      switch (e.keyCode) {
+        case 37: //Botão Esquerdo
+        //  personagem.vx = 0;
+        break;
+        case 39: //Botão Direito
+        //  personagem.vx = 0;
+        break;
+        case 38: //Botão Cima
+        //  personagem.vy = 0;
+        break;
+        case 40: //Botão Baixo
+        //  personagem.vy=0;
+        break;
+        //Jogador 2
+        case 65: // Botao A //Esquerda
+        break;
+
+        case 83: //Botao S //Baixo
+        break;
+
+        case 68: // Botao D // Direita
+        break;
+
+        case 87: // Botao W// Cima
+        break;
+        default:
+        if(cenario==0){
+        cenario=2;
+        somFim.pause();
+        somIni.load();
+        break;
+        }
+      }
+    });
+
+    requestAnimationFrame(atualizar);
+    </script>
+  </body>
+  </html>
